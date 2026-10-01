@@ -1,0 +1,90 @@
+# lora-classifier configuration. Paths may be absolute or relative to this file.
+
+[paths]
+# ComfyUI's loras root. LoRA names sent to ComfyUI are relative to this.
+loras_root = 'C:\Users\Gaming\AppData\Local\Comfy-Desktop\ComfyUI-Shared\models\loras'
+# Subfolder of loras_root to classify. This folder is only ever READ.
+source_subdir = "Pony"
+# Everything the tool writes goes here.
+output_dir = "output"
+# Manual review records and the blocklist (kept outside output/ so rebuilds never touch them).
+review_dir = "review"
+blocklist_dir = "blocklist"
+
+[blocklist]
+# Before every run, this folder is swept for files whose hash is on the blocklist; matches are
+# deleted and logged in blocklist/blocklist.log. Relative paths are relative to loras_root.
+scan_dir = "Pony"
+
+[organize]
+# How LoRAs are placed into output/loras/<category>/:
+#   "hardlink" - no extra disk space, same volume only (falls back to copy)
+#   "copy"     - full copy
+#   "symlink"  - needs Windows developer mode or admin
+#   "none"     - only write descriptions, don't place LoRA files
+link_mode = "hardlink"
+
+[deepinfra]
+base_url = "https://api.deepinfra.com/v1/openai"
+model = "deepseek-ai/DeepSeek-V4.1-Flash"
+# API key is read from the DEEPINFRA_API_KEY env var or the .env file.
+temperature = 0.3
+max_tokens = 12000
+timeout_s = 300
+# Longest side of images sent to the model (smaller = cheaper/faster).
+image_max_side = 768
+# Second opinion: an image the screener flags is re-checked by this independent vision model and
+# discarded only if it agrees. Errors or refusals keep the first flag. "" disables it.
+second_opinion_model = "Qwen/Qwen3-VL-235B-A22B-Instruct"
+
+[comfy]
+url = "http://127.0.0.1:8188"
+checkpoint = "ponyDiffusionV6XL_v6StartWithThisOne.safetensors"
+clip_skip = -2
+steps = 25
+cfg = 7.0
+sampler = "euler_ancestral"
+scheduler = "normal"
+base_seed = 1234567
+timeout_s = 900
+
+[comfy.sizes]
+square = [1024, 1024]
+portrait = [832, 1216]
+landscape = [1216, 832]
+
+[probe]
+# Number of probe images rendered per LoRA before classification (4, 8 or 16 recommended).
+count = 4
+# Of those, how many are also rendered WITHOUT the LoRA (same prompt+seed) so the
+# model can see what the LoRA actually changes. 0 disables.
+baseline_count = 2
+weight = 0.9
+aspect = "square"
+prefix = "score_9, score_8_up, score_7_up"
+negative = "score_4, score_5, score_6, lowres, worst quality, bad anatomy, bad hands, jpeg artifacts, watermark, signature, text"
+# Generic probe templates, used in order (cycled with new seeds if count > len).
+# {triggers} = activation tags, {top_tags} = most common training tags.
+templates = [
+  "{triggers}, {top_tags}",
+  "{triggers}",
+  "{triggers}, {top_tags}, source_anime",
+  "{triggers}, {top_tags}, source_cartoon",
+  "{triggers}, 1girl, solo, standing, full body, simple background",
+  "{triggers}, {top_tags}, realistic, photo",
+  "{triggers}, 1girl, solo, upper body, looking at viewer",
+  "{triggers}, {top_tags}, outdoors, scenery",
+]
+
+[civitai]
+# Look each LoRA up on Civitai by file hash (metadata only; images are never downloaded).
+# This sends the file hashes to civitai.com. Results are cached in output/cache/.
+enabled = true
+request_delay_s = 0.5
+# Render probes at the resolutions Civitai's example images use, snapped to Pony buckets.
+probe_resolutions = true
+
+[examples]
+# The model decides how many example images a LoRA deserves, up to this cap.
+max_count = 8
+min_count = 2

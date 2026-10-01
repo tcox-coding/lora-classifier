@@ -1,0 +1,7 @@
+.env
+.venv/
+output/
+__pycache__/
+review/
+!review/.keep
+backups/
